@@ -3,6 +3,10 @@
 A lightweight, Kakashi-themed home screen (launcher) for Android TV, built for a Xiaomi Mi TV
 (Android 14, 2 GB RAM). It's plain Java with no libraries, and uses about 40 MB of RAM.
 
+![Anime Home: Kakashi theme home screen](docs/screenshots/home.jpg)
+
+![Top 5 shelf: hover over an app to see what's popular on it](docs/screenshots/top5-shelf.jpg)
+
 ## Features
 
 - **Kakashi Hatake theme**: wallpaper that changes daily, a clock and date, a quote of the day, and Kakashi-blue accents.
@@ -18,10 +22,54 @@ A lightweight, Kakashi-themed home screen (launcher) for Android TV, built for a
 > Your personal "Continue watching" history can't be shown. Android only lets privileged system
 > launchers read it (`ACCESS_ALL_EPG_DATA`), so the shelf shows what's popular instead.
 
-## Install the APK
+## Install
 
-Download `anime-home.apk` from the [Releases](../../releases) page, then with network debugging
-turned on on the TV:
+### Easiest: let an AI assistant do it
+
+Open an AI coding assistant that can run commands on your computer, such as [Claude Code](https://claude.com/claude-code),
+Codex CLI or Gemini CLI. Then paste this prompt:
+
+```text
+Install the "Anime Home" launcher on my Android TV.
+Project: https://github.com/VishalGujela/anime-tv-home
+
+Please:
+1. Check that adb (Android platform-tools) is installed on this computer, and install it if it isn't
+   (macOS: brew install --cask android-platform-tools, Debian/Ubuntu: sudo apt install adb, Windows: winget install Google.PlatformTools).
+2. Ask me for my TV's IP address. If I haven't enabled debugging yet, walk me through it on the TV:
+   Settings > Device Preferences > About > press "Build" 7 times to unlock Developer options,
+   then Settings > Device Preferences > Developer options > turn on USB debugging and Network debugging.
+   The IP is under Settings > Network & Internet > (your Wi-Fi network).
+3. Explain that the installer will install the app and make it my default home screen, and wait for my OK.
+4. On macOS or Linux, run:
+     curl -fsSL https://raw.githubusercontent.com/VishalGujela/anime-tv-home/main/install.sh | bash -s -- <TV_IP>
+   On Windows, do the same steps with adb directly: adb connect <TV_IP>:5555, download
+   https://github.com/VishalGujela/anime-tv-home/releases/latest/download/anime-home.apk,
+   adb install -r anime-home.apk, then
+   adb shell cmd package set-home-activity com.vishal.animehome/.Home
+5. If the TV shows "Allow debugging?", tell me to choose "Always allow" and press OK, then continue.
+6. When it's done, confirm Anime Home is on screen, tell me how to undo it, and remind me to turn
+   network debugging off again.
+```
+
+### Quick install (macOS / Linux)
+
+Turn on network debugging on the TV (see step 2 above), then run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/VishalGujela/anime-tv-home/main/install.sh | bash -s -- <TV_IP>
+```
+
+The script connects to the TV, checks that it's an Android TV running Android 9 or newer, downloads the latest release,
+installs it, makes it the default home screen, and prints how to undo. To remove it again:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/VishalGujela/anime-tv-home/main/install.sh | bash -s -- <TV_IP> --uninstall
+```
+
+### Manual install
+
+Download `anime-home.apk` from [Releases](../../releases), then run:
 
 ```sh
 adb connect <tv-ip>:5555
@@ -30,7 +78,6 @@ adb shell cmd package set-home-activity com.vishal.animehome/.Home
 ```
 
 Run the last command again after every reinstall, because reinstalling can reset the default home screen.
-
 HDMI buttons need the TV's built-in input player. On Mi TVs that's **Mi Live TV** (`com.mitv.livetv`).
 
 ## Build from source
@@ -67,6 +114,8 @@ python3 -I tools/regression.py --reboot        # also checks everything survives
 | `src/com/vishal/animehome/Theme.java` | Theme definition (Kakashi) |
 | `src/com/vishal/animehome/FxView.java` | Optional focus effects (unused by the Kakashi theme) |
 | `tools/` | Icon renderers, icon maps, regression tests |
+| `install.sh` | One-command installer / uninstaller |
+| `docs/screenshots/` | README screenshots |
 
 ## Credits
 
