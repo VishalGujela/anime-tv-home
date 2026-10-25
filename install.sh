@@ -26,13 +26,14 @@ if ! command -v adb >/dev/null 2>&1; then
        Windows: download Android SDK Platform-Tools from https://developer.android.com/tools/releases/platform-tools"
 fi
 
-tv() { adb -s "$TV" "$@"; }
+# adb must never read stdin: with `curl ... | bash` the rest of this script *is* stdin.
+tv() { adb -s "$TV" "$@" </dev/null; }
 
 say "Connecting to $TV"
 connected=""
 for i in $(seq 1 30); do
-  adb connect "$TV" >/dev/null 2>&1 || true
-  state="$(adb -s "$TV" get-state 2>&1 || true)"
+  adb connect "$TV" >/dev/null 2>&1 </dev/null || true
+  state="$(adb -s "$TV" get-state 2>&1 </dev/null || true)"
   if [[ "$state" == "device" ]]; then connected=1; break; fi
   if [[ "$state" == *unauthorized* || $i -eq 1 ]]; then
     say "If the TV shows 'Allow debugging?', choose 'Always allow from this computer' and press OK."
@@ -81,7 +82,7 @@ Anime Home is installed and is now your home screen.
   Undo (go back to your previous home screen):
     adb -s $TV shell cmd package set-home-activity $previous
   Remove completely:
-    ./install.sh $TV --uninstall
+    curl -fsSL https://raw.githubusercontent.com/$REPO/main/install.sh | bash -s -- $TV --uninstall
 
 Tip: once you're done, turn network debugging off again on the TV
 (Settings > Device Preferences > Developer options).
