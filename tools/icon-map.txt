@@ -1,0 +1,14 @@
+com.google.android.youtube.tv youtube
+com.netflix.ninja netflix
+com.amazon.amazonvideo.livingroom amazon_prime_video
+in.startv.hotstar jiohotstar
+com.sonyliv sony_liv
+com.graymatrix.did zee5
+com.fancode.tv fancode
+com.mxtech.videoplayer.television generic_player
+com.android.vending google_play_store
+com.google.android.play.games google_play_games
+com.mitv.livetv google_tv
+com.xiaomi.mitv.mediaexplorer generic_files
+com.xiaomi.mitv.smartshare miracast
+com.xiaomi.mitv.tvmanager hyperos_cleaner

@@ -1,0 +1,6 @@
+wifi_0 signal_wifi_0_bar
+wifi_1 network_wifi_1_bar
+wifi_2 network_wifi_2_bar
+wifi_3 network_wifi_3_bar
+wifi_4 signal_wifi_4_bar
+wifi_off wifi_off
