@@ -74,7 +74,9 @@ public class Home extends Activity {
     private Suggestions suggestions;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private Runnable pendingShelf;
-    private FrameLayout wifiBtn;
+    private static final int REQ_WIFI = 1;
+    private FrameLayout root, wifiBtn;
+    private WifiPanel wifiPanel;
     private ImageView wifiIcon;
     private String wifiStatus = "Not connected";
     private ConnectivityManager.NetworkCallback netCallback;
@@ -124,7 +126,15 @@ public class Home extends Activity {
         themeFromIntent(getIntent());
         applyTheme(currentTheme(), true);
         buildUtilRow();
+        // After a reboot the HDMI inputs register a few seconds after home starts; rebuild when they appear.
+        TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
+        if (tim != null) tim.registerCallback(inputCallback, ui);
     }
+
+    private final TvInputManager.TvInputCallback inputCallback = new TvInputManager.TvInputCallback() {
+        @Override public void onInputAdded(String inputId) { buildUtilRow(); }
+        @Override public void onInputRemoved(String inputId) { buildUtilRow(); }
+    };
 
     /** Lets a theme be picked when launching, e.g. `am start -n ... --es theme ichigo` (or "auto"). */
     private boolean themeFromIntent(Intent i) {
@@ -137,6 +147,8 @@ public class Home extends Activity {
 
     @Override protected void onDestroy() {
         unregisterReceiver(packageReceiver);
+        TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
+        if (tim != null) tim.unregisterCallback(inputCallback);
         if (netCallback != null) getSystemService(ConnectivityManager.class).unregisterNetworkCallback(netCallback);
         super.onDestroy();
     }
@@ -155,12 +167,23 @@ public class Home extends Activity {
             applyTheme(currentTheme(), true);
             return;
         }
+        // Test hook: `am start -n ... --ez wifi true` opens the Wi-Fi dropdown without key presses.
+        if (intent.getBooleanExtra("wifi", false)) {
+            wifiBtn.requestFocus();
+            ui.post(this::openWifiPanel);
+            return;
+        }
+        if (wifiPanel != null) wifiPanel.close(false);
         // Home pressed while already home: jump back to the first app.
         appsScroll.smoothScrollTo(0, 0);
         if (appsRow.getChildCount() > 0) appsRow.getChildAt(0).requestFocus();
     }
 
     @Override public void onBackPressed() {
+        if (wifiPanel != null && wifiPanel.isOpen()) {
+            wifiPanel.close(true);
+            return;
+        }
         // From the suggestions shelf, Back returns to the app; otherwise home has nowhere to go back to.
         if (shelf.contains(getCurrentFocus()) && shelfSource != null) shelfSource.requestFocus();
     }
@@ -179,7 +202,7 @@ public class Home extends Activity {
     private int dp(float v) { return Math.round(v * d); }
 
     private View buildUi() {
-        FrameLayout root = new FrameLayout(this);
+        root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
         root.setClipChildren(false);
 
@@ -279,12 +302,7 @@ public class Home extends Activity {
                 focusName.setText("Wi-Fi  ·  " + wifiStatus);
             }
         });
-        wifiBtn.setOnClickListener(v -> {
-            try {
-                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (ActivityNotFoundException ignored) {
-            }
-        });
+        wifiBtn.setOnClickListener(v -> openWifiPanel());
 
         // Bottom: focused app name, app row, inputs + settings.
         LinearLayout bottom = new LinearLayout(this);
@@ -731,6 +749,30 @@ public class Home extends Activity {
         if (wifiBtn.isFocused()) focusName.setText("Wi-Fi  ·  " + wifiStatus);
     }
 
+    private int accent() { return theme == null ? 0xFF4FC3F7 : theme.accent; }
+
+    private void openWifiPanel() {
+        if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] {android.Manifest.permission.ACCESS_FINE_LOCATION}, REQ_WIFI);
+            return;
+        }
+        if (wifiPanel == null || wifiPanel.accent() != accent()) wifiPanel = new WifiPanel(this, root, wifiBtn, accent());
+        wifiPanel.toggle();
+    }
+
+    @Override public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
+        if (req != REQ_WIFI) return;
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+            openWifiPanel();
+        } else {
+            // Without location access Android hides nearby networks, so fall back to the system screen.
+            try {
+                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (ActivityNotFoundException ignored) {
+            }
+        }
+    }
+
     private void styleWifi(boolean has) {
         wifiBtn.setBackground(roundGlass(has));
         wifiIcon.setColorFilter(has ? (theme == null ? 0xFF4FC3F7 : theme.accent) : 0xD9FFFFFF, PorterDuff.Mode.SRC_IN);
@@ -779,6 +821,9 @@ public class Home extends Activity {
     // ---------------------------------------------------------------- inputs + settings
 
     private void buildUtilRow() {
+        View focused = getCurrentFocus();
+        boolean hadFocus = focused != null && focused.getParent() == utilRow;
+        utilRow.removeAllViews();
         TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
         if (tim != null) {
             for (TvInputInfo info : tim.getTvInputList()) {
@@ -793,6 +838,8 @@ public class Home extends Activity {
             } catch (ActivityNotFoundException ignored) {
             }
         });
+        // Removing a focused pill hands focus to whatever Android picks; put it back on the first app.
+        if (hadFocus && appsRow.getChildCount() > 0) appsRow.getChildAt(0).requestFocus();
     }
 
     private void addPill(String text, View.OnClickListener click) {

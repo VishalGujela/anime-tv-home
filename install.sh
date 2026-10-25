@@ -69,6 +69,8 @@ tv install -r "$tmp/anime-home.apk" | tail -1
 
 say "Making Anime Home the default home screen"
 tv shell cmd package set-home-activity "$PKG/.Home" >/dev/null
+# Lets the Wi-Fi dropdown list nearby networks without a permission prompt on the TV.
+tv shell pm grant "$PKG" android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1 || true
 tv shell input keyevent KEYCODE_HOME
 sleep 2
 

@@ -1,5 +1,6 @@
 #!/bin/zsh
 # Builds Anime Home without Gradle: aapt2 -> javac -> d8 -> zipalign -> apksigner.
+# Targets SDK 28 on purpose: the Wi-Fi dropdown joins networks with WifiManager calls that newer targets lose.
 set -euo pipefail
 cd "${0:A:h}"
 
@@ -18,7 +19,7 @@ fi
 
 $BT/aapt2 compile --dir res -o $OUT/res.zip
 $BT/aapt2 link -o $OUT/unsigned.apk -I $JAR --manifest AndroidManifest.xml -A assets \
-  --min-sdk-version 28 --target-sdk-version 34 --version-code ${VERSION_CODE:-1} --version-name 1.0 \
+  --min-sdk-version 28 --target-sdk-version 28 --version-code ${VERSION_CODE:-1} --version-name 1.0 \
   -0 jpg $OUT/res.zip
 
 javac -source 8 -target 8 -bootclasspath $JAR:$BT/core-lambda-stubs.jar -Xlint:-options -encoding UTF-8 \
