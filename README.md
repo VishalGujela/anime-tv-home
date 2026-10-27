@@ -26,8 +26,7 @@ A lightweight, Kakashi-themed home screen (launcher) for Android TV, built for a
 
 ### Easiest: let an AI assistant do it
 
-Open an AI coding assistant that can run commands on your computer, such as [Claude Code](https://claude.com/claude-code),
-Codex CLI or Gemini CLI. Then paste this prompt:
+Open an AI coding assistant that can run commands on your computer, such as Codex CLI or Gemini CLI. Then paste this prompt:
 
 ```text
 Install the "Anime Home" launcher on my Android TV.
